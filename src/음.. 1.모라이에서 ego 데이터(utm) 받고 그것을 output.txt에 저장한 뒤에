@@ -1,0 +1,54 @@
+음.. 1.모라이에서 ego 데이터(utm) 받고 그것을 output.txt에 저장한 뒤에 Desmos로 그 값을 복붙해서 넣어 ego 주행 경로 만들기
+
+2.  받은 gps데이터를 utm으로 변환해서(패키지 사용) 그것도 다른 output2.txt에 저장한 뒤에 Desmos로 그 값을 복붙해서 넣어 gps(utm) 주행 경로 만들기
+
+1번 실행과정 
+차가 달리면 → 데이터가 ROS 토픽에 올라옴.
+rostopic echo로 그걸 output.txt에 저장 
+(rostopic echo /topic_name > output.txt)
+저장된 txt를 convert.py가 읽어서 변환.
+(python3 convert.py)
+변환된 결과를 Desmos로 시각화.
+** convert.py로 (x,y)로 변환시킨거임 
+
+2번 실행과정 
+
+변환 소스코드 (wgs84->utm) src파일에 넣어두기 
+MORAI 시뮬레이터 주행 → /gps 토픽으로 WGS84 위도·경도·고도 데이터 수신
+그걸 UTM 좌표계로 변환해서 output2.txt 파일에 저장
+방법 1-> 노드 추가 
+gps->utm 으로 바꿔서 utm좌표 받는 gps/utm 노드 만들고,
+rostopic echo gps/utm > output2.txt 로 하기
+방법2 -> ofstream 이용하기
+
+변환 노드에 ofstream을 이용해서 파일에 바로 저장 
+/Ego_topic (Ego 차량 원본 UTM 좌표) → output1.txt 저장
+/gps (wgs84좌표) → UTM 변환 후 → output2.txt 저장
+MORAI에서 차량을 주행시키면 두 파일이 실시간으로 업데이트
+주행 종료 후 Ctrl + C → 노드가 종료되면서 파일 저장
+-저장된 아웃풋 변환(convert.py) 파일 수정하기 
+input_file_path = 'output1.txt'
+output_file_path = 'convert1.txt'
+input_file_path = 'output2.txt'
+output_file_path = 'convert2.txt'
+
+(x, y) 형식으로 된 convert1.txt, convert2.txt 생성
+
+
+
+나중에 convert.py처럼 (x, y) 좌표 형태로 만들어서 Desmos 시각화
+
+
+
+
+
+추가  원하는 게 차가 달리면서 실시간으로 변환까지 해서 바로 (x, y) 좌표 찍히는 파일이라면, convert.py를 그냥 파일 변환기말고 subscriber 노드로 만들어서 해보기..
+그럼 convert.py를 ROS 노드 형태로 바꿔서, 주행 중에 자동으로 (x, y) 변환해서 저장되게 만들어보면 됨..
+
+
+
+컨트롤 a ->전체 선택 
+컨트롤 / ->전체 주석 처리
+컨트롤 s -> 자동 저장
+cd .. / .. -> 두칸 뒤로가기 
+subl . -> 서브라임 텍스쳐열기 
