@@ -17,8 +17,8 @@ double lat0, lon0, h0;
 double x0, y0, z0;
 
 // ───── 출력 파일 ─────
-ofstream gps_file("output2.txt");
-ofstream ego_file("output1.txt");
+ofstream gps_file("results/output4.txt");   // GPS → ENU
+ofstream ego_file("results/output3.txt");   // Ego → ENU
 
 // ───── GPS 콜백 ─────
 void gpsCallback(const morai_msgs::GPSMessage::ConstPtr& msg) {
@@ -61,8 +61,7 @@ void egoCallback(const morai_msgs::EgoVehicleStatus::ConstPtr& msg) {
 
 // ───── main ─────
 int main(int argc, char** argv) {
-    // 실행파일 이름은 main2, 노드 이름은 coord_logger
-    ros::init(argc, argv, "coord_logger");
+    ros::init(argc, argv, "coord_logger");  // 노드 이름
     ros::NodeHandle nh;
 
     ros::Subscriber gps_sub = nh.subscribe("/gps", 10, gpsCallback);

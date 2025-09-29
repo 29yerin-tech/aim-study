@@ -18,22 +18,33 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## catkin 패키지 설정
 catkin_package(
-  LIBRARIES ${PROJECT_NAME}
+  INCLUDE_DIRS include
+  LIBRARIES coord_utils
   CATKIN_DEPENDS message_runtime std_msgs roscpp sensor_msgs morai_msgs geodesy geographic_msgs
 )
 
 ## include 디렉토리
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   /usr/include                # GeographicLib 헤더 포함
 )
 
-## 실행 파일 빌드
+## ───── 실행 파일 1 (기존 main.cpp) ─────
 add_executable(main src/main.cpp)
 add_dependencies(main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## 라이브러리 연결
 target_link_libraries(main
   ${catkin_LIBRARIES}
-  Geographic                  # libGeographic.so 링크
+  Geographic
+)
+
+## ───── 좌표 변환 유틸 라이브러리 ─────
+add_library(coord_utils src/coord_utils.cpp)
+
+## ───── 실행 파일 2 (새 main2.cpp) ─────
+add_executable(main2 src/main2.cpp)
+add_dependencies(main2 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(main2
+  coord_utils
+  ${catkin_LIBRARIES}
 )
