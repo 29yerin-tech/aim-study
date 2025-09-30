@@ -1,26 +1,17 @@
-#ifndef COORD_UTILS_HPP
-#define COORD_UTILS_HPP
+#pragma once
+#include <GeographicLib/UTMUPS.hpp>
 
-// ───── WGS84 타원체 상수 ─────
-extern const double a;   // 장반경
-extern const double f;   // 편평률
-extern const double e2;  // 이심률 제곱
-extern const double k0;  // UTM 스케일 계수
+// ---- 좌표 변환 함수 선언 ----
 
-// ───── 함수 선언 ─────
+// UTM → WGS84 (GeographicLib 사용)
+void utmToWgs84(double easting, double northing, int zone, bool northp,
+                double& lat, double& lon);
 
-// WGS84 → ECEF
+// WGS84 → ECEF 
 void wgs84ToECEF(double lat, double lon, double h,
-                 double &x, double &y, double &z);
+                 double& x, double& y, double& z);
 
-// ECEF → ENU
+// ECEF → ENU 
 void ecefToENU(double x, double y, double z,
-               double x0, double y0, double z0,
-               double lat0, double lon0,
-               double &east, double &north, double &up);
-
-// UTM → WGS84
-void utmToWgs84(double easting, double northing, int zone, bool northHemisphere,
-                double &lat, double &lon);
-
-#endif // COORD_UTILS_HPP
+               double lat0, double lon0, double h0,
+               double& east, double& north, double& up);

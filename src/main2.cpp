@@ -1,67 +1,81 @@
 #include <ros/ros.h>
-#include <morai_msgs/GPSMessage.h>          // /gps 데이터
-#include <morai_msgs/EgoVehicleStatus.h>    // /Ego_topic 데이터
-#include <fstream>                          // 파일 저장
-#include <iomanip>                          // 출력 포맷
-#include "coord_utils.hpp"                  // 좌표 변환 함수 선언
+#include <morai_msgs/GPSMessage.h>
+#include <morai_msgs/EgoVehicleStatus.h>
+#include "coord_utils.hpp"
+#include <fstream>   //  파일 출력용
 
-using namespace std;
-
-// ───── 모라이 심 오프셋 ─────
+// MORAI에서 제공하는 오프셋
 const double eastOffset  = 302459.942;
 const double northOffset = 4122635.537;
 
-// ───── 기준점(origin) 관련 변수 ─────
+// ENU 기준점
 bool origin_set = false;
-double lat0, lon0, h0;
-double x0, y0, z0;
+double origin_lat, origin_lon, origin_alt;
 
-// ───── 출력 파일 ─────
-ofstream gps_file("results/output4.txt");   // GPS → ENU
-ofstream ego_file("results/output3.txt");   // Ego → ENU
+//  파일 출력 스트림
+std::ofstream gps_file("results/output4.txt");   // GPS → ENU
+std::ofstream ego_file("results/output3.txt");   // EGO → ENU
 
-// ───── GPS 콜백 ─────
-void gpsCallback(const morai_msgs::GPSMessage::ConstPtr& msg) {
+void gpsCallback(const morai_msgs::GPSMessage::ConstPtr& msg)
+{
+    if (!origin_set) {
+        origin_lat = msg->latitude;
+        origin_lon = msg->longitude;
+        origin_alt = msg->altitude;
+        origin_set = true;
+
+        // ROS_INFO("[INIT] ENU Origin set: lat=%.8f, lon=%.8f, h=%.3f",
+        //          origin_lat, origin_lon, origin_alt);
+    }
+
+    // WGS84 → ECEF
     double x, y, z;
     wgs84ToECEF(msg->latitude, msg->longitude, msg->altitude, x, y, z);
 
-    if (!origin_set) {
-        origin_set = true;
-        lat0 = msg->latitude;
-        lon0 = msg->longitude;
-        h0   = msg->altitude;
-        wgs84ToECEF(lat0, lon0, h0, x0, y0, z0);
-    }
+    // ECEF → ENU
+    double enu_x, enu_y, enu_z;
+    ecefToENU(x, y, z, origin_lat, origin_lon, origin_alt, enu_x, enu_y, enu_z);
 
-    double e, n, u;
-    ecefToENU(x, y, z, x0, y0, z0, lat0, lon0, e, n, u);
-    gps_file << fixed << setprecision(3) << e << " " << n << " " << u << "\n";
+    // 파일 출력
+    gps_file << enu_x << " " << enu_y << " " << enu_z << std::endl;
 }
 
-// ───── Ego 콜백 ─────
-void egoCallback(const morai_msgs::EgoVehicleStatus::ConstPtr& msg) {
+void egoCallback(const morai_msgs::EgoVehicleStatus::ConstPtr& msg)
+{
     if (!origin_set) {
-        return;  // 아직 origin이 없으면 무시
+        ROS_WARN("[EGO] Origin not set yet. Waiting for GPS...");
+        return;
     }
 
+    // 1. UTM 좌표 복원
     double ego_e = msg->position.x + eastOffset;
     double ego_n = msg->position.y + northOffset;
-    double h     = msg->position.z;
+    double ego_h = msg->position.z;
 
+    // 2. UTM → WGS84
+    int zone = 52;
+    bool northp = true;
     double lat, lon;
-    utmToWgs84(ego_e, ego_n, 52, true, lat, lon);
+    utmToWgs84(ego_e, ego_n, zone, northp, lat, lon);
 
+    // 3. WGS84 → ECEF
     double x, y, z;
-    wgs84ToECEF(lat, lon, h, x, y, z);
+    wgs84ToECEF(lat, lon, ego_h, x, y, z);
 
-    double e, n, u;
-    ecefToENU(x, y, z, x0, y0, z0, lat0, lon0, e, n, u);
-    ego_file << fixed << setprecision(3) << e << " " << n << " " << u << "\n";
+    // 4. ECEF → ENU
+    double enu_x, enu_y, enu_z;
+    ecefToENU(x, y, z, origin_lat, origin_lon, origin_alt, enu_x, enu_y, enu_z);
+
+    // // 터미널 출력
+    // ROS_INFO("[EGO] ENU: E=%.3f, N=%.3f, U=%.3f", enu_x, enu_y, enu_z);
+
+    // 파일 출력
+    ego_file << enu_x << " " << enu_y << " " << enu_z << std::endl;
 }
 
-// ───── main ─────
-int main(int argc, char** argv) {
-    ros::init(argc, argv, "coord_logger");  // 노드 이름
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "coord_transform_node");
     ros::NodeHandle nh;
 
     ros::Subscriber gps_sub = nh.subscribe("/gps", 10, gpsCallback);
@@ -69,7 +83,9 @@ int main(int argc, char** argv) {
 
     ros::spin();
 
+    // 종료 시 파일 닫기
     gps_file.close();
     ego_file.close();
+
     return 0;
 }

@@ -1,33 +1,26 @@
-<?xml version="1.0"?>
 <package format="2">
   <name>yerin</name>
   <version>0.0.0</version>
-  <description>The yerin package</description>
+  <description>Coordinate transform node</description>
 
-  <maintainer email="autonav@todo.todo">autonav</maintainer>
+  <maintainer email="you@example.com">your_name</maintainer>
   <license>TODO</license>
 
-  <!-- 빌드 도구 -->
   <buildtool_depend>catkin</buildtool_depend>
 
-  <!-- 빌드 시 필요한 패키지 -->
   <build_depend>roscpp</build_depend>
   <build_depend>std_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
   <build_depend>morai_msgs</build_depend>
-  <build_depend>geodesy</build_depend>
-  <build_depend>geographic_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
 
-  <!-- 실행 시 필요한 패키지 -->
   <exec_depend>roscpp</exec_depend>
   <exec_depend>std_msgs</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>morai_msgs</exec_depend>
-  <exec_depend>geodesy</exec_depend>
-  <exec_depend>geographic_msgs</exec_depend>
-  <exec_depend>message_runtime</exec_depend>
 
-  <export>
-  </export>
+  <!-- ✅ GeographicLib 추가 -->
+  <build_depend>geographiclib</build_depend>
+  <exec_depend>geographiclib</exec_depend>
+
+<build_depend>libgeographic-dev</build_depend>
+<exec_depend>libgeographic-dev</exec_depend>
+
 </package>
